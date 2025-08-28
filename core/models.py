@@ -10,7 +10,7 @@ class Author(models.Model):
 
 class Genre(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    dascription = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
 
 
 class Book(models.Model):
