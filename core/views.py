@@ -1,19 +1,29 @@
 from rest_framework import generics, status
-from .models import Author, Genre, Book, BorrowRecord
+from .models import Author, Book, BorrowRecord
 from .serializers import (
     AuthorSerializer,
     BookSerializer,
     BorrowRecordSerializer,
 )
-from django_filters.rest_framework import DjangoFilterBackend
+
+# from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils import timezone
+from django.core.cache import cache
 
 
 class AuthorListCreateView(generics.ListCreateAPIView):
-    queryset = Author.objects.all()
     serializer_class = AuthorSerializer
+
+    def get_queryset(self):
+        cache_key = "authors_list"
+        cached_authors = cache.get(cache_key)
+        if cached_authors:
+            return cached_authors
+        authors = Author.objects.all()
+        cache.set(cache_key, authors, timeout=60 * 2)
+        return authors
 
 
 class AuthorDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -22,10 +32,39 @@ class AuthorDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class BookListCreateView(generics.ListCreateAPIView):
-    queryset = Book.objects.all()
+    # queryset = Book.objects.all()
     serializer_class = BookSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["author", "genre"]
+    # filter_backends = [DjangoFilterBackend]
+    # filterset_fields = ["author", "genre"]
+
+    def get_queryset(self):
+        authors = self.request.query_params.getlist("author", None)
+        genres = self.request.query_params.getlist("genre", None)
+        cache_key = (
+            f"book_list_author_{authors}_genre_{genres}"
+            if (authors or genres)
+            else "book_list"
+        )
+        cached_books = cache.get(cache_key)
+
+        print("Cached books:", cached_books)
+        if cached_books:
+            return cached_books
+        print("Querying DB...")
+
+        books = Book.objects.all()
+        if authors:
+            books = books.filter(author_id__in=authors)
+        if genres:
+            books = books.filter(genre__id__in=genres).distinct()
+
+        cache.set(cache_key, books, 60 * 10)
+
+        return books
+
+    def perform_create(self, serializer):
+        serializer.save()
+        cache.delete_pattern("book_list*")
 
 
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):

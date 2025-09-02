@@ -1,0 +1,10 @@
+repos:
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.3.0  # Укажите актуальную версию
+    hooks:
+      - id: flake8
+        name: Flake8
+        entry: flake8
+        language: python
+        types: [python]
+        exclude: ^(tests|docs)/

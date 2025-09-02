@@ -16,9 +16,22 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
+    genre_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Genre.objects.all(), many=True, source="genre"
+    )
+
     class Meta:
         model = Book
-        fields = "__all__"
+        fields = [
+            "id",
+            "title",
+            "author",
+            "summary",
+            "isbn",
+            "genre_ids",
+            "total_copies",
+            "available_copies",
+        ]
 
 
 class BorrowRecordSerializer(serializers.ModelSerializer):

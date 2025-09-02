@@ -1,0 +1,16 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203
+exclude =
+    .git,
+    __pycache__,
+    .tox,
+    .nox,
+    .coverage,
+    .hypothesis,
+    .pytest_cache,
+    build,
+    dist
+
+per-file-ignores =
+    settings.py: E501
