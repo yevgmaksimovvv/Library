@@ -21,7 +21,7 @@ class Book(models.Model):
     genre = models.ManyToManyField(Genre, related_name="books")
     total_copies = models.PositiveIntegerField(default=1)
     available_copies = models.PositiveIntegerField(default=1)
-    content = models.TextField(blank=True, null=True)
+    content = models.BinaryField(blank=True, null=True)
 
 
 class BorrowRecord(models.Model):

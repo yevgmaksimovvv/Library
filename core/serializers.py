@@ -19,6 +19,7 @@ class BookSerializer(serializers.ModelSerializer):
     genre_ids = serializers.PrimaryKeyRelatedField(
         queryset=Genre.objects.all(), many=True, source="genre"
     )
+    content = serializers.FileField(write_only=True, required=False)
 
     class Meta:
         model = Book

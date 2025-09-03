@@ -11,8 +11,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils import timezone
 from django.core.cache import cache
+from django.http import FileResponse
+from io import BytesIO
 
-from .utils import convert_pdf_to_text
+
+# from .utils import convert_pdf_to_text
 
 
 class AuthorListCreateView(generics.ListCreateAPIView):
@@ -74,22 +77,44 @@ class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BookSerializer
 
 
-class BookUploadPdf(generics.RetrieveUpdateDestroyAPIView):
+class BookUploadPDFView(generics.UpdateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
 
     def patch(self, request, *args, **kwargs):
-        book = (
-            self.get_object()
-        )  # аналог book=Book....get(id=pk), работающий с queryset
-        pdf_file = request.FILES.get("pdf_file")
-        if not pdf_file:
+        book = self.get_object()
+
+        if not "content" in request.FILES:
             return Response(
-                {"error": "Файл не был передан"},
+                {"detail": "Не найден PDF файл"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        uploaded_file = request.FILES["content"]
+
+        if not uploaded_file.content_type == "application/pdf":
+            return Response(
+                {"detail": "Файл должен быть PDF"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        book.content = convert_pdf_to_text(pdf_file)
-        return Response(self.get_serializer(book).data, status=status.HTTP_200_OK)
+
+        book.content = uploaded_file.read()
+        book.save()
+        return Response({"detail": "PDF успешно загружен."}, status=status.HTTP_200_OK)
+
+
+class BookDownloadPDFView(generics.RetrieveAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        book = self.get_object()
+        if not book.content:
+            return Response(
+                {"error": "Нет PDF файла"}, status=status.HTTP_404_NOT_FOUND
+            )
+        pdf_file = BytesIO(book.content)
+        response = FileResponse(pdf_file, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{book.title}.pdf"'
+        return response
 
 
 class BorrowBook(APIView):
