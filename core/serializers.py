@@ -31,6 +31,7 @@ class BookSerializer(serializers.ModelSerializer):
             "genre_ids",
             "total_copies",
             "available_copies",
+            "content",
         ]
 
 

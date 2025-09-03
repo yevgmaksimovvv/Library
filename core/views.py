@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from django.utils import timezone
 from django.core.cache import cache
 
+from .utils import convert_pdf_to_text
+
 
 class AuthorListCreateView(generics.ListCreateAPIView):
     serializer_class = AuthorSerializer
@@ -70,6 +72,24 @@ class BookListCreateView(generics.ListCreateAPIView):
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
+
+
+class BookUploadPdf(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+
+    def patch(self, request, *args, **kwargs):
+        book = (
+            self.get_object()
+        )  # аналог book=Book....get(id=pk), работающий с queryset
+        pdf_file = request.FILES.get("pdf_file")
+        if not pdf_file:
+            return Response(
+                {"error": "Файл не был передан"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        book.content = convert_pdf_to_text(pdf_file)
+        return Response(self.get_serializer(book).data, status=status.HTTP_200_OK)
 
 
 class BorrowBook(APIView):
