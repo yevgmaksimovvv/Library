@@ -5,17 +5,12 @@ from .serializers import (
     BookSerializer,
     BorrowRecordSerializer,
 )
-
-# from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils import timezone
 from django.core.cache import cache
 from django.http import FileResponse
 from io import BytesIO
-
-
-# from .utils import convert_pdf_to_text
 
 
 class AuthorListCreateView(generics.ListCreateAPIView):
@@ -84,13 +79,13 @@ class BookUploadPDFView(generics.UpdateAPIView):
     def patch(self, request, *args, **kwargs):
         book = self.get_object()
 
-        if not "content" in request.FILES:
+        if "content" not in request.FILES:  # noqa: E713
             return Response(
                 {"detail": "Не найден PDF файл"}, status=status.HTTP_400_BAD_REQUEST
             )
         uploaded_file = request.FILES["content"]
 
-        if not uploaded_file.content_type == "application/pdf":
+        if uploaded_file.content_type != "application/pdf":
             return Response(
                 {"detail": "Файл должен быть PDF"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -107,7 +102,7 @@ class BookDownloadPDFView(generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         book = self.get_object()
-        if not book.content:
+        if not book.content:  # noqa: E713
             return Response(
                 {"error": "Нет PDF файла"}, status=status.HTTP_404_NOT_FOUND
             )
